@@ -1,11 +1,21 @@
 const express = require("express");
+const multer = require("multer");
+const axios = require("axios");
+const fs = require("fs");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 🔥 CHANGE THIS TO YOUR PC LOCAL IP
+const SERVER_URL = "https://ota-cloud.onrender.com";
+
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
+
+const upload = multer({ dest: "uploads/" });
 
 // ===============================
 // In-memory storage
@@ -29,7 +39,7 @@ app.get("/device-ping", (req, res) => {
 });
 
 // ===============================
-// 2️⃣ Check Device Online Status
+// 2️⃣ Check Device Online Status (Web uses this)
 // ===============================
 app.get("/check-device", (req, res) => {
 
@@ -49,30 +59,82 @@ app.get("/check-device", (req, res) => {
 });
 
 // ===============================
-// 3️⃣ Send GitHub RAW Link for Update
+// 3️⃣ Upload .bin for Specific Device
 // ===============================
-app.post("/update-link/:deviceId", (req, res) => {
+app.post("/upload/:deviceId", upload.single("firmware"), (req, res) => {
+
+    const deviceId = req.params.deviceId;
+
+    if (!req.file) {
+        return res.status(400).send("No file uploaded");
+    }
+
+    const firmwareName = `firmware_${deviceId}.bin`;
+    const targetPath = path.join(__dirname, firmwareName);
+
+    fs.rename(req.file.path, targetPath, (err) => {
+
+        if (err) return res.status(500).send("File move failed");
+
+        deviceUpdates[deviceId] = {
+    update: true,
+    firmwareUrl: `${SERVER_URL}/${firmwareName}`
+};
+
+
+
+        console.log(`Firmware uploaded for ${deviceId}`);
+        res.send(`Firmware uploaded for ${deviceId}`);
+    });
+});
+
+// ===============================
+// 4️⃣ Update via GitHub Link    
+// ===============================
+app.post("/update-link/:deviceId", async (req, res) => {
 
     const deviceId = req.params.deviceId;
     const firmwareUrl = req.body.url;
 
     if (!firmwareUrl) {
-        return res.status(400).json({ error: "No URL provided" });
+        return res.status(400).send("No URL provided");
     }
 
-    deviceUpdates[deviceId] = {
-        update: true,
-        firmwareUrl: firmwareUrl
-    };
+    const firmwareName = `firmware_${deviceId}.bin`;
+    const filePath = path.join(__dirname, firmwareName);
 
-    console.log(`Update stored for ${deviceId}`);
-    console.log("Firmware URL:", firmwareUrl);
+    try {
+        const response = await axios({
+            method: "GET",
+            url: firmwareUrl,
+            responseType: "stream"
+        });
 
-    res.json({ message: "Firmware URL saved successfully" });
+        const writer = fs.createWriteStream(filePath);
+        response.data.pipe(writer);
+
+        writer.on("finish", () => {
+
+            deviceUpdates[deviceId] = {
+                update: true,
+                firmware: firmwareName
+            };
+
+            console.log(`Firmware downloaded for ${deviceId}`);
+            res.send(`Firmware ready for ${deviceId}`);
+        });
+
+        writer.on("error", () => {
+            res.status(500).send("Download failed");
+        });
+
+    } catch (error) {
+        res.status(500).send("Invalid firmware URL");
+    }
 });
 
 // ===============================
-// 4️⃣ ESP32 Checks for Update
+// 5️⃣ ESP32 Checks for Update
 // ===============================
 app.get("/trigger-update", (req, res) => {
 
@@ -84,12 +146,13 @@ app.get("/trigger-update", (req, res) => {
 
     if (deviceUpdates[deviceId] && deviceUpdates[deviceId].update) {
 
+        // 🔥 Send GitHub RAW firmware link directly
         const firmwareURL = deviceUpdates[deviceId].firmwareUrl;
 
-        // Reset flag after sending
         deviceUpdates[deviceId].update = false;
 
         console.log(`Update triggered for ${deviceId}`);
+        console.log("Firmware URL:", firmwareURL);
 
         return res.json({
             update: true,
@@ -101,12 +164,46 @@ app.get("/trigger-update", (req, res) => {
 });
 
 // ===============================
-// 5️⃣ Debug Route (Optional)
+// 6️⃣ Serve Firmware Files
 // ===============================
-app.get("/all-updates", (req, res) => {
-    res.json(deviceUpdates);
+app.get("/firmware_:deviceId.bin", (req, res) => {
+
+    const deviceId = req.params.deviceId;
+    const filePath = path.join(__dirname, `firmware_${deviceId}.bin`);
+
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).send("Firmware not found");
+    }
+
+    res.download(filePath);
+});
+app.post("/view-device", (req, res) => {
+
+    const deviceId = req.body.device;
+
+    if (!deviceId) {
+        return res.status(400).json({ error: "Device ID required" });
+    }
+
+    if (deviceUpdates[deviceId]) {
+        return res.json({
+            device: deviceId,
+            data: deviceUpdates[deviceId]
+        });
+    }
+
+    res.json({
+        device: deviceId,
+        message: "No update stored"
+    });
+});
+app.get("/all-data", (req, res) => {
+    res.json({
+        deviceUpdates,
+        deviceOnlineStatus
+    });
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`OTA Server running on port ${PORT}`);
+    console.log(`OTA Server running at ${SERVER_URL}`);
 });
