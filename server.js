@@ -117,7 +117,7 @@ app.post("/update-link/:deviceId", async (req, res) => {
 
             deviceUpdates[deviceId] = {
                 update: true,
-                firmware: firmwareName
+                firmwareUrl: firmwareUrl
             };
 
             console.log(`Firmware downloaded for ${deviceId}`);
@@ -131,6 +131,28 @@ app.post("/update-link/:deviceId", async (req, res) => {
     } catch (error) {
         res.status(500).send("Invalid firmware URL");
     }
+});
+app.get("/trigger-update", (req, res) => {
+
+    const deviceId = req.query.device;
+
+    if (!deviceId) {
+        return res.json({ update: false });
+    }
+
+    if (deviceUpdates[deviceId] && deviceUpdates[deviceId].update) {
+
+        const firmwareURL = deviceUpdates[deviceId].firmwareUrl;
+
+        deviceUpdates[deviceId].update = false;
+
+        return res.json({
+            update: true,
+            url: firmwareURL
+        });
+    }
+
+    res.json({ update: false });
 });
 
 // ===============================
