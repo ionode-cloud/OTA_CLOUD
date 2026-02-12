@@ -6,10 +6,10 @@ const cors = require("cors");
 const path = require("path");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // 🔥 CHANGE THIS TO YOUR PC LOCAL IP
-const SERVER_IP = "192.168.1.105";   // <-- CHANGE THIS
+const SERVER_URL = "https://ota-cloud.onrender.com";   // <-- CHANGE THIS
 
 app.use(cors());
 app.use(express.json());
@@ -144,7 +144,8 @@ app.get("/trigger-update", (req, res) => {
 
     if (deviceUpdates[deviceId] && deviceUpdates[deviceId].update) {
 
-        const firmwareURL = `http://${SERVER_IP}:${PORT}/${deviceUpdates[deviceId].firmware}`;
+        const firmwareURL = `${SERVER_URL}/${deviceUpdates[deviceId].firmware}`;
+
 
         // Reset flag after trigger
         deviceUpdates[deviceId].update = false;
