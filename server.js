@@ -76,10 +76,11 @@ app.post("/upload/:deviceId", upload.single("firmware"), (req, res) => {
 
         if (err) return res.status(500).send("File move failed");
 
-        deviceUpdates[deviceId] = {
-            update: true,
-            firmware: firmwareName
-        };
+         deviceUpdates[deviceId] = {
+    update: true,
+    firmwareUrl: firmwareUrl
+};
+
 
         console.log(`Firmware uploaded for ${deviceId}`);
         res.send(`Firmware uploaded for ${deviceId}`);
@@ -87,7 +88,7 @@ app.post("/upload/:deviceId", upload.single("firmware"), (req, res) => {
 });
 
 // ===============================
-// 4️⃣ Update via GitHub Link
+// 4️⃣ Update via GitHub Link    
 // ===============================
 app.post("/update-link/:deviceId", async (req, res) => {
 
@@ -144,7 +145,8 @@ app.get("/trigger-update", (req, res) => {
 
     if (deviceUpdates[deviceId] && deviceUpdates[deviceId].update) {
 
-        const firmwareURL = `${req.protocol}://${req.get("host")}/${deviceUpdates[deviceId].firmware}`;
+        // 🔥 Send GitHub RAW firmware link directly
+        const firmwareURL = deviceUpdates[deviceId].firmwareUrl;
 
         deviceUpdates[deviceId].update = false;
 
@@ -159,7 +161,6 @@ app.get("/trigger-update", (req, res) => {
 
     res.json({ update: false });
 });
-
 
 // ===============================
 // 6️⃣ Serve Firmware Files
