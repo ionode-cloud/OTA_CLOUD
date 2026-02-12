@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 🔥 CHANGE THIS TO YOUR PC LOCAL IP
-const SERVER_URL = "https://ota-cloud.onrender.com";   // <-- CHANGE THIS
+const SERVER_URL = "https://ota-cloud.onrender.com";
 
 app.use(cors());
 app.use(express.json());
@@ -144,13 +144,12 @@ app.get("/trigger-update", (req, res) => {
 
     if (deviceUpdates[deviceId] && deviceUpdates[deviceId].update) {
 
-        const firmwareURL = `${SERVER_URL}/${deviceUpdates[deviceId].firmware}`;
+        const firmwareURL = `${req.protocol}://${req.get("host")}/${deviceUpdates[deviceId].firmware}`;
 
-
-        // Reset flag after trigger
         deviceUpdates[deviceId].update = false;
 
         console.log(`Update triggered for ${deviceId}`);
+        console.log("Firmware URL:", firmwareURL);
 
         return res.json({
             update: true,
@@ -160,6 +159,7 @@ app.get("/trigger-update", (req, res) => {
 
     res.json({ update: false });
 });
+
 
 // ===============================
 // 6️⃣ Serve Firmware Files
@@ -177,5 +177,5 @@ app.get("/firmware_:deviceId.bin", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`OTA Server running at http://${SERVER_IP}:${PORT}`);
+    console.log(`OTA Server running at ${SERVER_URL}`);
 });
