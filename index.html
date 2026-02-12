@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 OTA Control Panel</title>
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 500px;
+            margin: 50px auto;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        #deviceStatus {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .online {
+            color: green;
+        }
+
+        .offline {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<h2>ESP32 OTA Update Panel</h2>
+
+<!-- ========================= -->
+<!-- DEVICE NAME INPUT -->
+<!-- ========================= -->
+
+<h3>Enter Device ID</h3>
+<input type="text" id="deviceId" placeholder="Enter device name (e.g. DEVICE_001)">
+<button onclick="checkDevice()">Check Device Status</button>
+
+<p id="deviceStatus"></p>
+
+<!-- ========================= -->
+<!-- UPDATE VIA GITHUB LINK -->
+<!-- ========================= -->
+
+<h3>Update via GitHub Link</h3>
+<input type="text" id="gitlink" placeholder="Paste firmware .bin URL here">
+<button id="linkBtn" onclick="updateViaLink()" disabled>Update from Link</button>
+
+<!-- ========================= -->
+<!-- UPLOAD BIN FILE -->
+<!-- ========================= -->
+
+<h3>Upload .bin File</h3>
+<input type="file" id="fileInput">
+<button id="uploadBtn" onclick="uploadFile()" disabled>Upload & Update</button>
+
+<p id="status"></p>
+
+<script>
+
+function checkDevice() {
+
+    const deviceId = document.getElementById("deviceId").value;
+
+    if (!deviceId) {
+        alert("Please enter device ID");
+        return;
+    }
+
+    fetch(`/check-device?device=${deviceId}`)
+    .then(res => res.json())
+    .then(data => {
+
+        const statusText = document.getElementById("deviceStatus");
+        const linkBtn = document.getElementById("linkBtn");
+        const uploadBtn = document.getElementById("uploadBtn");
+
+        if (data.online) {
+            statusText.innerText = "Device is ONLINE";
+            statusText.className = "online";
+
+            linkBtn.disabled = false;
+            uploadBtn.disabled = false;
+        } else {
+            statusText.innerText = "Device is OFFLINE";
+            statusText.className = "offline";
+
+            linkBtn.disabled = true;
+            uploadBtn.disabled = true;
+        }
+    })
+    .catch(() => {
+        document.getElementById("deviceStatus").innerText = "Error checking device";
+    });
+}
+
+
+function updateViaLink() {
+
+    const deviceId = document.getElementById("deviceId").value;
+    const link = document.getElementById("gitlink").value;
+
+    if (!link) {
+        alert("Please enter firmware URL");
+        return;
+    }
+
+    fetch(`/update-link/${deviceId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: link })
+    })
+    .then(res => res.text())
+    .then(data => {
+        document.getElementById("status").innerText = data;
+    });
+}
+
+
+function uploadFile() {
+
+    const deviceId = document.getElementById("deviceId").value;
+    const file = document.getElementById("fileInput").files[0];
+
+    if (!file) {
+        alert("Please select a .bin file");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("firmware", file);
+
+    fetch(`/upload/${deviceId}`, {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.text())
+    .then(data => {
+        document.getElementById("status").innerText = data;
+    });
+}
+
+</script>
+
+</body>
+</html>
