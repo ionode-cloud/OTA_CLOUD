@@ -9,10 +9,10 @@ const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
+const SERVER_URL = process.env.SERVER_URL ;
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/ota_db")
+mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("Connected to MongoDB"))
     .catch(err => console.error("MongoDB connection error:", err));
 

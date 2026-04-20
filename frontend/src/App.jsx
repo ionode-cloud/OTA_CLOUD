@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import './index.css';
@@ -11,14 +11,11 @@ const Toast = Swal.mixin({
   showConfirmButton: false,
   timer: 3000,
   timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer);
-    toast.addEventListener('mouseleave', Swal.resumeTimer);
-  }
 });
 
 function App() {
   const [deviceId, setDeviceId] = useState('');
+  const [deviceList, setDeviceList] = useState([]);
   const [deviceStatus, setDeviceStatus] = useState(null); // 'online', 'offline', or null
   const [gitLink, setGitLink] = useState('');
   const [file, setFile] = useState(null);
@@ -27,114 +24,87 @@ function App() {
     link: false,
     upload: false
   });
+  const fileInputRef = useRef(null);
+
+  // Fetch all devices on load
+  useEffect(() => {
+    fetchDevices();
+    const interval = setInterval(fetchDevices, 10000); // Auto-refresh every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchDevices = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/all-data`);
+      setDeviceList(response.data);
+    } catch (error) {
+      console.error("Error fetching devices:", error);
+    }
+  };
+
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(new Date());
 
   const handleCheckDevice = async () => {
     if (!deviceId) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Oops...',
-        text: 'Please enter a Device ID!',
-        confirmButtonColor: '#10b981'
-      });
+      Swal.fire({ icon: 'warning', title: 'Select Node', text: 'Please select a hardware node first.', confirmButtonColor: '#3b82f6' });
       return;
     }
 
     setLoading(prev => ({ ...prev, check: true }));
-
     try {
       const response = await axios.get(`${API_BASE_URL}/check-device?device=${deviceId}`);
       if (response.data.online) {
         setDeviceStatus('online');
-        Toast.fire({
-          icon: 'success',
-          title: 'Device is Online'
-        });
+        Swal.fire({ icon: 'success', title: 'State Verified', text: `${deviceId} is online and ready.`, confirmButtonColor: '#3b82f6' });
       } else {
         setDeviceStatus('offline');
-        Toast.fire({
-          icon: 'error',
-          title: 'Device is Offline'
-        });
+        Swal.fire({ icon: 'error', title: 'State Offline', text: `${deviceId} is currently offline.`, confirmButtonColor: '#3b82f6' });
       }
     } catch (error) {
-      setDeviceStatus(null);
-      Swal.fire({
-        icon: 'error',
-        title: 'Connection Error',
-        text: 'Could not reach the server.',
-        confirmButtonColor: '#10b981'
-      });
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to verify node state.', confirmButtonColor: '#3b82f6' });
     } finally {
       setLoading(prev => ({ ...prev, check: false }));
     }
   };
 
   const handleUpdateViaLink = async () => {
-    if (!gitLink) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Missing Link',
-        text: 'Please paste the firmware .bin URL.',
-        confirmButtonColor: '#10b981'
-      });
+    if (!deviceId || !gitLink) {
+      Swal.fire({ icon: 'warning', title: 'Incomplete Info', text: 'Select a node and provide a firmware URL.', confirmButtonColor: '#3b82f6' });
       return;
     }
 
     setLoading(prev => ({ ...prev, link: true }));
-
     try {
       const response = await axios.post(`${API_BASE_URL}/update-link/${deviceId}`, { url: gitLink });
-      Swal.fire({
-        icon: 'success',
-        title: 'Update Triggered',
-        text: response.data,
-        confirmButtonColor: '#10b981'
-      });
+      Swal.fire({ icon: 'success', title: 'Push Success', text: response.data, confirmButtonColor: '#3b82f6' });
     } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Update Failed',
-        text: 'Check the URL and try again.',
-        confirmButtonColor: '#10b981'
-      });
+      Swal.fire({ icon: 'error', title: 'Push Failed', text: 'Check the URL and try again.', confirmButtonColor: '#3b82f6' });
     } finally {
       setLoading(prev => ({ ...prev, link: false }));
     }
   };
 
   const handleUploadFile = async () => {
-    if (!file) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'No File',
-        text: 'Please select a .bin firmware file.',
-        confirmButtonColor: '#10b981'
-      });
+    if (!deviceId || !file) {
+      Swal.fire({ icon: 'warning', title: 'No Binary', text: 'Select a node and drop a firmware file.', confirmButtonColor: '#3b82f6' });
       return;
     }
 
     setLoading(prev => ({ ...prev, upload: true }));
-
     const formData = new FormData();
     formData.append("firmware", file);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/upload/${deviceId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      Swal.fire({
-        icon: 'success',
-        title: 'Upload Successful',
-        text: response.data,
-        confirmButtonColor: '#10b981'
-      });
+      const response = await axios.post(`${API_BASE_URL}/upload/${deviceId}`, formData);
+      Swal.fire({ icon: 'success', title: 'Flash Success', text: response.data, confirmButtonColor: '#3b82f6' });
+      setFile(null);
     } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Upload Failed',
-        text: 'There was an error uploading the file.',
-        confirmButtonColor: '#10b981'
-      });
+      Swal.fire({ icon: 'error', title: 'Flash Failed', text: 'Upload error.', confirmButtonColor: '#3b82f6' });
     } finally {
       setLoading(prev => ({ ...prev, upload: false }));
     }
@@ -143,59 +113,104 @@ function App() {
   const isOnline = deviceStatus === 'online';
 
   return (
-    <div className="container">
-      <h2>OTA Control Center</h2>
+    <div>
       
-      <h3>Device Authentication</h3>
-      <input 
-        type="text" 
-        placeholder="Enter device ID (e.g. DEVICE_001)"
-        value={deviceId}
-        onChange={(e) => setDeviceId(e.target.value)}
-      />
-      <button 
-        onClick={handleCheckDevice} 
-        disabled={loading.check}
-      >
-        {loading.check ? <div className="spinner"></div> : '🔍 Check Connectivity'}
-      </button>
-
-      <div style={{ textAlign: 'center', minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {deviceStatus && (
-          <div className={`status-badge ${isOnline ? 'status-online' : 'status-offline'}`}>
-            <div className="ping-indicator"></div>
-            {isOnline ? 'ONLINE' : 'OFFLINE'}
+      <div className="dashboard-card">
+        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '2rem', color: '#1e293b', textAlign: 'center' }}>
+          OTA Control Center
+        </h2>
+        {/* Panel 1: Target Hardware Node */}
+        <div className="section">
+          <div className="label-container">
+            <span className="section-label">Enter Device ID</span>
           </div>
-        )}
-      </div>
+          <div className="input-row">
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <input 
+                type="text" 
+                placeholder="Enter device ID (e.g. DEVICE_001)"
+                value={deviceId}
+                onChange={(e) => setDeviceId(e.target.value)}
+              />
+              {deviceStatus && (
+                <div className={`status-badge ${isOnline ? 'status-online' : 'status-offline'}`} style={{ width: 'fit-content', marginTop: '0' }}>
+                  <div className="ping-indicator"></div>
+                  {isOnline ? 'ONLINE' : 'OFFLINE'}
+                </div>
+              )}
+            </div>
+            <button className="btn-primary" onClick={handleCheckDevice} disabled={loading.check} style={{ marginBottom: deviceStatus ? '32px' : '0' }}>
+              {loading.check ? <div className="spinner"></div> : 'Verify State'}
+            </button>
+          </div>
+        </div>
 
-      <div style={{ transition: 'opacity 0.3s ease' }}>
-        <h3>Update via GitHub Link</h3>
-        <input 
-          type="text" 
-          placeholder="Paste firmware .bin URL here"
-          value={gitLink}
-          onChange={(e) => setGitLink(e.target.value)}
-        />
-        <button 
-          onClick={handleUpdateViaLink} 
-          disabled={loading.link}
-        >
-          {loading.link ? <div className="spinner"></div> : '🚀 Deploy from Link'}
-        </button>
+        {/* Panel 2: Remote Flash */}
+        <div className="section">
+          <div className="label-container">
+            <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span className="icon">🌐</span> Update via GitHub Link
+            </span>
+          </div>
+          <div className="input-row">
+            <input 
+              type="text" 
+              placeholder="https://assets.io/firmware_v2.bin"
+              value={gitLink}
+              onChange={(e) => setGitLink(e.target.value)}
+            />
+            <button className="btn-secondary" onClick={handleUpdateViaLink} disabled={loading.link}>
+              {loading.link ? <div className="spinner"></div> : 'Push Link'}
+            </button>
+          </div>
+        </div>
 
-        <h3>Upload .bin File</h3>
-        <input 
-          type="file" 
-          accept=".bin"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
-        <button 
-          onClick={handleUploadFile} 
-          disabled={loading.upload}
-        >
-          {loading.upload ? <div className="spinner"></div> : '📤 Upload & Deploy'}
-        </button>
+        {/* Panel 3: Direct Binary Uplink */}
+        <div className="section">
+          <div className="label-container">
+            <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span className="icon">💾</span> Upload .bin File
+            </span>
+          </div>
+          <div 
+            className={`dropzone ${file ? 'active' : ''}`}
+            onClick={() => fileInputRef.current.click()}
+            onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('active'); }}
+            onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('active'); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.remove('active');
+              if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                setFile(e.dataTransfer.files[0]);
+              }
+            }}
+          >
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              accept=".bin"
+              onChange={(e) => setFile(e.target.files[0])}
+            />
+            <div className="dropzone-icon">📤</div>
+            <div className="dropzone-text">
+              {file ? file.name : 'Drop Firmware Binary'}
+            </div>
+            <div className="dropzone-subtext">Accepts raw .bin files up to 4MB</div>
+          </div>
+
+          <button 
+            className="btn-flash" 
+            onClick={handleUploadFile} 
+            disabled={!file || loading.upload}
+          >
+            {loading.upload ? <div className="spinner"></div> : (
+              <>
+                <span className="icon">📤</span> Initiate Binary Flash <span style={{ marginLeft: '5px' }}>›</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
