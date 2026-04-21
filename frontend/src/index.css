@@ -197,22 +197,118 @@ select:focus, input[type="text"]:focus {
   cursor: not-allowed;
 }
 
-/* Spinner */
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+/* Loading State Animations (from Reference) */
+@keyframes fillProgress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+@keyframes pulse {
+  0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+  40% { transform: scale(1.2); opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* Button Loading States */
+.btn-primary.loading, .btn-secondary.loading, .btn-flash.loading {
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* Fill Progress for Primary Button */
+.btn-primary.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.4));
+  animation: fillProgress 2s linear infinite;
+  z-index: 1;
+}
+
+/* Shimmer for Secondary Button */
+.btn-secondary.loading::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 1.5s infinite;
+  z-index: 1;
+}
+
+/* Bounce for Flash Button */
+.btn-flash.loading .spinner {
+  display: none !important;
+}
+
+.bounce-ball {
+  width: 12px;
+  height: 12px;
+  background: white;
   border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 0.8s linear infinite;
+  animation: bounce 1s infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.icon {
-  display: inline-flex;
-  align-items: center;
+.dots {
+  display: flex;
+  gap: 4px;
   justify-content: center;
+  align-items: center;
 }
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+.ping-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.status-online .ping-indicator { background: #10b981; box-shadow: 0 0 0 rgba(16, 185, 129, 0.4); animation: ping 1.5s infinite; }
+.status-offline .ping-indicator { background: #ef4444; }
+
+@keyframes ping {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.status-online { background: #ecfdf5; color: #059669; }
+.status-offline { background: #fef2f2; color: #dc2626; }

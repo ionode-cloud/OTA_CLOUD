@@ -70,6 +70,9 @@ app.get("/check-device", async (req, res) => {
     res.json({ online: false });
 });
 
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
+});
 // ===============================
 // 3️⃣ Upload .bin for Specific Device
 // ===============================

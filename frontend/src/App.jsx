@@ -114,11 +114,11 @@ function App() {
 
   return (
     <div>
-      
       <div className="dashboard-card">
         <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '2rem', color: '#1e293b', textAlign: 'center' }}>
           OTA Control Center
         </h2>
+        
         {/* Panel 1: Target Hardware Node */}
         <div className="section">
           <div className="label-container">
@@ -130,17 +130,31 @@ function App() {
                 type="text" 
                 placeholder="Enter device ID (e.g. DEVICE_001)"
                 value={deviceId}
-                onChange={(e) => setDeviceId(e.target.value)}
+                onChange={(e) => {
+                  setDeviceId(e.target.value);
+                  setDeviceStatus(null); // Reset status on change
+                }}
               />
               {deviceStatus && (
                 <div className={`status-badge ${isOnline ? 'status-online' : 'status-offline'}`} style={{ width: 'fit-content', marginTop: '0' }}>
                   <div className="ping-indicator"></div>
-                  {isOnline ? 'ONLINE' : 'OFFLINE'}
+                  {isOnline ? 'DEVICE IS ONLINE' : 'DEVICE IS OFFLINE'}
                 </div>
               )}
             </div>
-            <button className="btn-primary" onClick={handleCheckDevice} disabled={loading.check} style={{ marginBottom: deviceStatus ? '32px' : '0' }}>
-              {loading.check ? <div className="spinner"></div> : 'Verify State'}
+            <button 
+              className={`btn-primary ${loading.check ? 'loading' : ''}`} 
+              onClick={handleCheckDevice} 
+              disabled={loading.check}
+              style={{ marginBottom: deviceStatus ? '24px' : '0' }}
+            >
+              {loading.check ? (
+                <div className="dots">
+                  <div className="dot"></div>
+                  <div className="dot"></div>
+                  <div className="dot"></div>
+                </div>
+              ) : '🔍 Verify State'}
             </button>
           </div>
         </div>
@@ -155,12 +169,23 @@ function App() {
           <div className="input-row">
             <input 
               type="text" 
-              placeholder="https://assets.io/firmware_v2.bin"
+              placeholder="https://raw.githubusercontent.com/.../firmware.bin"
               value={gitLink}
               onChange={(e) => setGitLink(e.target.value)}
+              disabled={!isOnline}
             />
-            <button className="btn-secondary" onClick={handleUpdateViaLink} disabled={loading.link}>
-              {loading.link ? <div className="spinner"></div> : 'Push Link'}
+            <button 
+              className={`btn-secondary ${loading.link ? 'loading' : ''}`} 
+              onClick={handleUpdateViaLink} 
+              disabled={loading.link || !isOnline}
+            >
+              {loading.link ? (
+                <div className="dots">
+                  <div className="dot"></div>
+                  <div className="dot"></div>
+                  <div className="dot"></div>
+                </div>
+              ) : '🚀 Push Link'}
             </button>
           </div>
         </div>
@@ -173,17 +198,26 @@ function App() {
             </span>
           </div>
           <div 
-            className={`dropzone ${file ? 'active' : ''}`}
-            onClick={() => fileInputRef.current.click()}
-            onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('active'); }}
-            onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('active'); }}
+            className={`dropzone ${file ? 'active' : ''} ${!isOnline ? 'disabled' : ''}`}
+            onClick={() => isOnline && fileInputRef.current.click()}
+            onDragOver={(e) => { 
+                if (!isOnline) return;
+                e.preventDefault(); 
+                e.currentTarget.classList.add('active'); 
+            }}
+            onDragLeave={(e) => { 
+                e.preventDefault(); 
+                e.currentTarget.classList.remove('active'); 
+            }}
             onDrop={(e) => {
+              if (!isOnline) return;
               e.preventDefault();
               e.currentTarget.classList.remove('active');
               if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                 setFile(e.dataTransfer.files[0]);
               }
             }}
+            style={{ opacity: isOnline ? 1 : 0.5, cursor: isOnline ? 'pointer' : 'not-allowed' }}
           >
             <input 
               type="file" 
@@ -194,17 +228,17 @@ function App() {
             />
             <div className="dropzone-icon">📤</div>
             <div className="dropzone-text">
-              {file ? file.name : 'Drop Firmware Binary'}
+              {file ? file.name : (isOnline ? 'Drop Firmware Binary' : 'Verify State First')}
             </div>
             <div className="dropzone-subtext">Accepts raw .bin files up to 4MB</div>
           </div>
 
           <button 
-            className="btn-flash" 
+            className={`btn-flash ${loading.upload ? 'loading' : ''}`} 
             onClick={handleUploadFile} 
-            disabled={!file || loading.upload}
+            disabled={!file || loading.upload || !isOnline}
           >
-            {loading.upload ? <div className="spinner"></div> : (
+            {loading.upload ? <div className="bounce-ball"></div> : (
               <>
                 <span className="icon">📤</span> Initiate Binary Flash <span style={{ marginLeft: '5px' }}>›</span>
               </>
