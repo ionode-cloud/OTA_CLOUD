@@ -1,83 +1,81 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const axios = require("axios");
 const fs = require("fs");
 const cors = require("cors");
 const path = require("path");
-const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SERVER_URL = process.env.SERVER_URL ;
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log("Connected to MongoDB"))
-    .catch(err => console.error("MongoDB connection error:", err));
-
-// Device Schema
-const deviceSchema = new mongoose.Schema({
-    deviceId: { type: String, required: true, unique: true },
-    lastSeen: { type: Date, default: Date.now },
-    updateAvailable: { type: Boolean, default: false },
-    firmwareUrl: { type: String, default: "" }
-});
-const Device = mongoose.model("Device", deviceSchema);
+// SERVER_URL is now loaded from .env
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
 
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from the backend (for firmware files)
+app.use(express.static(__dirname));
+
+// Serve static files from the frontend
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+// Root route to serve the frontend index.html
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/index.html"));
+});
+
 const upload = multer({ dest: "uploads/" });
+
+// ===============================
+// In-memory storage
+// ===============================
+let deviceUpdates = {};
+let deviceOnlineStatus = {};
 
 // ===============================
 // 1️⃣ Device Ping (ESP32 sends this)
 // ===============================
-app.get("/device-ping", async (req, res) => {
+app.get("/device-ping", (req, res) => {
+
     const deviceId = req.query.device;
+
     if (deviceId) {
-        try {
-            await Device.findOneAndUpdate(
-                { deviceId },
-                { lastSeen: Date.now() },
-                { upsert: true, new: true }
-            );
-            console.log(`${deviceId} is alive`);
-        } catch (error) {
-            console.error("Error updating device status:", error);
-        }
+        deviceOnlineStatus[deviceId] = Date.now();
+        console.log(`${deviceId} is alive`);
     }
+
     res.send("OK");
 });
 
 // ===============================
 // 2️⃣ Check Device Online Status (Web uses this)
 // ===============================
-app.get("/check-device", async (req, res) => {
+app.get("/check-device", (req, res) => {
+
     const deviceId = req.query.device;
+
     if (!deviceId) {
         return res.json({ online: false });
     }
 
-    try {
-        const device = await Device.findOne({ deviceId });
-        if (device && device.lastSeen && (Date.now() - new Date(device.lastSeen).getTime() < 10000)) {
-            return res.json({ online: true });
-        }
-    } catch (error) {
-        console.error("Error checking device:", error);
+    const lastSeen = deviceOnlineStatus[deviceId];
+
+    if (lastSeen && (Date.now() - lastSeen < 10000)) {
+        return res.json({ online: true });
     }
+
     res.json({ online: false });
 });
 
-app.get("/", (req, res) => {
-  res.send("API is running 🚀");
-});
 // ===============================
 // 3️⃣ Upload .bin for Specific Device
 // ===============================
-app.post("/upload/:deviceId", upload.single("firmware"), async (req, res) => {
+app.post("/upload/:deviceId", upload.single("firmware"), (req, res) => {
+
     const deviceId = req.params.deviceId;
+
     if (!req.file) {
         return res.status(400).send("No file uploaded");
     }
@@ -85,23 +83,19 @@ app.post("/upload/:deviceId", upload.single("firmware"), async (req, res) => {
     const firmwareName = `firmware_${deviceId}.bin`;
     const targetPath = path.join(__dirname, firmwareName);
 
-    fs.rename(req.file.path, targetPath, async (err) => {
+    fs.rename(req.file.path, targetPath, (err) => {
+
         if (err) return res.status(500).send("File move failed");
 
-        try {
-            await Device.findOneAndUpdate(
-                { deviceId },
-                { 
-                    updateAvailable: true, 
-                    firmwareUrl: `${SERVER_URL}/${firmwareName}` 
-                },
-                { upsert: true }
-            );
-            console.log(`Firmware uploaded for ${deviceId}`);
-            res.send(`Firmware uploaded for ${deviceId}`);
-        } catch (error) {
-            res.status(500).send("Database update failed");
-        }
+        deviceUpdates[deviceId] = {
+    update: true,
+    firmwareUrl: `${SERVER_URL}/${firmwareName}`
+};
+
+
+
+        console.log(`Firmware uploaded for ${deviceId}`);
+        res.send(`Firmware uploaded for ${deviceId}`);
     });
 });
 
@@ -109,6 +103,7 @@ app.post("/upload/:deviceId", upload.single("firmware"), async (req, res) => {
 // 4️⃣ Update via GitHub Link    
 // ===============================
 app.post("/update-link/:deviceId", async (req, res) => {
+
     const deviceId = req.params.deviceId;
     const firmwareUrl = req.body.url;
 
@@ -129,21 +124,15 @@ app.post("/update-link/:deviceId", async (req, res) => {
         const writer = fs.createWriteStream(filePath);
         response.data.pipe(writer);
 
-        writer.on("finish", async () => {
-            try {
-                await Device.findOneAndUpdate(
-                    { deviceId },
-                    { 
-                        updateAvailable: true, 
-                        firmwareUrl: firmwareUrl 
-                    },
-                    { upsert: true }
-                );
-                console.log(`Firmware downloaded for ${deviceId}`);
-                res.send(`Firmware ready for ${deviceId}`);
-            } catch (error) {
-                res.status(500).send("Database update failed");
-            }
+        writer.on("finish", () => {
+
+            deviceUpdates[deviceId] = {
+                update: true,
+                firmwareUrl: firmwareUrl
+            };
+
+            console.log(`Firmware downloaded for ${deviceId}`);
+            res.send(`Firmware ready for ${deviceId}`);
         });
 
         writer.on("error", () => {
@@ -154,34 +143,56 @@ app.post("/update-link/:deviceId", async (req, res) => {
         res.status(500).send("Invalid firmware URL");
     }
 });
+app.get("/trigger-update", (req, res) => {
 
-// ===============================
-// 5️⃣ ESP32 Checks for Update
-// ===============================
-app.get("/trigger-update", async (req, res) => {
     const deviceId = req.query.device;
+
     if (!deviceId) {
         return res.json({ update: false });
     }
 
-    try {
-        const device = await Device.findOne({ deviceId });
-        if (device && device.updateAvailable) {
-            const firmwareURL = device.firmwareUrl;
-            
-            // Mark update as processed
-            device.updateAvailable = false;
-            await device.save();
+    if (deviceUpdates[deviceId] && deviceUpdates[deviceId].update) {
 
-            console.log(`Update triggered for ${deviceId}`);
-            return res.json({
-                update: true,
-                url: firmwareURL
-            });
-        }
-    } catch (error) {
-        console.error("Error triggering update:", error);
+        const firmwareURL = deviceUpdates[deviceId].firmwareUrl;
+
+        deviceUpdates[deviceId].update = false;
+
+        return res.json({
+            update: true,
+            url: firmwareURL
+        });
     }
+
+    res.json({ update: false });
+});
+
+// ===============================
+// 5️⃣ ESP32 Checks for Update
+// ===============================
+app.get("/trigger-update", (req, res) => {
+
+    const deviceId = req.query.device;
+
+    if (!deviceId) {
+        return res.json({ update: false });
+    }
+
+    if (deviceUpdates[deviceId] && deviceUpdates[deviceId].update) {
+
+        // 🔥 Send GitHub RAW firmware link directly
+        const firmwareURL = deviceUpdates[deviceId].firmwareUrl;
+
+        deviceUpdates[deviceId].update = false;
+
+        console.log(`Update triggered for ${deviceId}`);
+        console.log("Firmware URL:", firmwareURL);
+
+        return res.json({
+            update: true,
+            url: firmwareURL
+        });
+    }
+
     res.json({ update: false });
 });
 
@@ -189,6 +200,7 @@ app.get("/trigger-update", async (req, res) => {
 // 6️⃣ Serve Firmware Files
 // ===============================
 app.get("/firmware_:deviceId.bin", (req, res) => {
+
     const deviceId = req.params.deviceId;
     const filePath = path.join(__dirname, `firmware_${deviceId}.bin`);
 
@@ -198,44 +210,31 @@ app.get("/firmware_:deviceId.bin", (req, res) => {
 
     res.download(filePath);
 });
+app.post("/view-device", (req, res) => {
 
-// ===============================
-// 7️⃣ View Device Data
-// ===============================
-app.post("/view-device", async (req, res) => {
     const deviceId = req.body.device;
+
     if (!deviceId) {
         return res.status(400).json({ error: "Device ID required" });
     }
 
-    try {
-        const device = await Device.findOne({ deviceId });
-        if (device) {
-            return res.json({
-                device: deviceId,
-                data: device
-            });
-        }
-    } catch (error) {
-        console.error("Error viewing device:", error);
+    if (deviceUpdates[deviceId]) {
+        return res.json({
+            device: deviceId,
+            data: deviceUpdates[deviceId]
+        });
     }
 
     res.json({
         device: deviceId,
-        message: "No device data found"
+        message: "No update stored"
     });
 });
-
-// ===============================
-// 8️⃣ All Data
-// ===============================
-app.get("/all-data", async (req, res) => {
-    try {
-        const devices = await Device.find();
-        res.json(devices);
-    } catch (error) {
-        res.status(500).json({ error: "Could not fetch data" });
-    }
+app.get("/all-data", (req, res) => {
+    res.json({
+        deviceUpdates,
+        deviceOnlineStatus
+    });
 });
 
 app.listen(PORT, "0.0.0.0", () => {
