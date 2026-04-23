@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 🔥 CHANGE THIS TO YOUR PC LOCAL IP
-const SERVER_URL = "https://ota-cloud.onrender.com";
+const SERVER_URL = "https://ota-cloud-vfq4.onrender.com";
 
 app.use(cors());
 app.use(express.json());
