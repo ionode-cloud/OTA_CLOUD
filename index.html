@@ -3,316 +3,473 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 OTA Control Panel</title>
+    <title>OTA Control Center</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/all.min.css/6.4.0/css/all.min.css">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <style>
-        body {
-            font-family: Arial;
-            max-width: 500px;
-            margin: 50px auto;
+        :root {
+            --primary-color: #3B82F6;
+            --primary-hover: #2563EB;
+            --bg-color: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #1E293B;
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+            --input-bg: #FFFFFF;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
 
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
-        button {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            color: white;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            font-weight: 500;
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            padding: 40px;
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--text-main);
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section label i {
+            font-size: 14px;
+            color: #4F46E5; /* Indigo shade for label icons */
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
             border-radius: 8px;
-            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            font-size: 14px;
+            color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        input[type="text"]::placeholder {
+            color: #A1A1AA;
+        }
+
+        button {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            min-height: 48px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            white-space: nowrap;
         }
 
-        button:hover:not(.loading) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,123,255,0.3);
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
         }
 
-        button:active:not(.loading) {
-            transform: translateY(0);
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
         }
 
-        /* Loading State 1: Progress Bar Fill */
-        button.loading-fill::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.4));
-            animation: fillProgress 2s linear infinite;
-            z-index: 0;
+        .btn-secondary {
+            background-color: #D1D5DB;
+            color: white;
         }
 
-        @keyframes fillProgress {
-            0% { width: 0%; }
-            100% { width: 100%; }
+        .btn-secondary:not(:disabled) {
+            background-color: #9CA3AF;
         }
 
-        /* Loading State 2: Shimmer Wave */
-        button.loading-shimmer {
-            background: #6c757d;
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #6B7280;
+            transform: translateY(-1px);
+        }
+
+        .btn-large {
+            width: 100%;
+            padding: 16px;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background-color: #D1D5DB; /* Grey as per image until active */
+            color: white;
+            margin-top: 8px;
+        }
+
+        .btn-large:not(:disabled) {
+            background-color: var(--primary-color);
+        }
+
+        button:disabled {
+            opacity: 0.7;
             cursor: not-allowed;
         }
 
-        button.loading-shimmer::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, 
-                transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 1.5s infinite;
-            z-index: 1;
+        /* Dropzone Styling */
+        .dropzone {
+            border: 2px dashed #E2E8F0;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background-color: #FAFAFA;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
         }
 
-        @keyframes shimmer {
-            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        .dropzone:hover {
+            border-color: var(--primary-color);
+            background-color: #F8FAFC;
         }
 
-        /* Loading State 3: Pulsing Dots */
-        .dots {
+        .dropzone.disabled {
+            cursor: not-allowed;
+            background-color: #F8F9FA;
+            border-color: #EDF2F7;
+        }
+
+        .dropzone-content {
             display: flex;
-            gap: 4px;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
         }
 
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.5);
-            animation: pulse 1.4s infinite ease-in-out;
+        .upload-icon {
+            font-size: 40px;
+            color: #C7D2FE;
+            background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            margin-bottom: 8px;
         }
 
-        .dot:nth-child(2) { animation-delay: 0.2s; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes pulse {
-            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-            40% { transform: scale(1.2); opacity: 1; }
+        .dropzone-main-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #64748B;
         }
 
-        /* Loading State 4: Bounce */
-        button.loading-bounce {
-            background: #6c757d;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .bounce-ball {
-            width: 12px;
-            height: 12px;
-            background: white;
-            border-radius: 50%;
-            animation: bounce 1s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        button.loading {
-            background: #6c757d;
-            cursor: not-allowed;
-            pointer-events: none;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        button.loading .dots,
-        button.loading .bounce-ball {
-            display: inline-flex;
+        .dropzone-sub-text {
+            font-size: 12px;
+            color: #94A3B8;
+            font-weight: 500;
         }
 
         #status {
-            margin-top: 20px;
-            font-weight: bold;
-            padding: 10px;
-            border-radius: 5px;
-            background: #f8f9fa;
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
             display: none;
         }
 
-        #deviceStatus {
-            margin-top: 10px;
-            font-weight: bold;
+        .status-info { background-color: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+        .status-success { background-color: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+        .status-error { background-color: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+
+        .device-status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
         }
 
-        .online { color: green; }
-        .offline { color: red; }
+        .online-badge { background-color: #DCFCE7; color: #166534; }
+        .offline-badge { background-color: #FEE2E2; color: #991B1B; }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        button.loading .spinner { display: block; }
+        button.loading i { display: none; }
+
     </style>
 </head>
 <body>
 
-<h2>ESP32 OTA Update Panel</h2>
+<div class="container">
+    <div class="card">
+        <h1>OTA Control Center</h1>
 
-<h3>Enter Device ID</h3>
-<input type="text" id="deviceId" placeholder="Enter device name (e.g. DEVICE_001)">
-<button id="checkBtn" class="loading-fill" onclick="checkDevice()">
-    🔍 Check Device Status
-    <div class="dots" style="display: none;">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
+        <!-- Device ID Section -->
+        <div class="section">
+            <label>ENTER DEVICE ID</label>
+            <div class="input-group">
+                <input type="text" id="deviceId" placeholder="Enter device ID (e.g. DEVICE_001)">
+                <button id="checkBtn" class="btn-primary" onclick="checkDevice()">
+                    <i class="fas fa-search"></i>
+                    <div class="spinner"></div>
+                    VERIFY STATE
+                </button>
+            </div>
+            <div id="deviceStatusContainer"></div>
+        </div>
+
+        <!-- GitHub Link Section -->
+        <div class="section">
+            <label><i class="fas fa-globe"></i> UPDATE VIA GITHUB LINK</label>
+            <div class="input-group">
+                <input type="text" id="gitlink" placeholder="https://raw.githubusercontent.com/.../firmware.bin">
+                <button id="linkBtn" class="btn-secondary" onclick="updateViaLink()" disabled>
+                    <i class="fas fa-rocket"></i>
+                    <div class="spinner"></div>
+                    PUSH LINK
+                </button>
+            </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="section">
+            <label><i class="fas fa-file-arrow-up"></i> UPLOAD .BIN FILE</label>
+            <div id="dropzone" class="dropzone disabled" onclick="triggerFileInput()">
+                <div class="dropzone-content">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <p class="dropzone-main-text" id="dropzoneText">Verify State First</p>
+                    <p class="dropzone-sub-text">ACCEPTS RAW .BIN FILES UP TO 4MB</p>
+                </div>
+                <input type="file" id="fileInput" accept=".bin" style="display: none;" onchange="handleFileSelect(event)">
+            </div>
+        </div>
+
+        <!-- Final Action Button -->
+        <button id="flashBtn" class="btn-large" onclick="uploadFile()" disabled>
+            <i class="fas fa-microchip"></i>
+            <div class="spinner"></div>
+            INITIATE BINARY FLASH ›
+        </button>
+
+        <div id="status"></div>
     </div>
-</button>
-
-<p id="deviceStatus"></p>
-
-<h3>Update via GitHub Link</h3>
-<input type="text" id="gitlink" placeholder="Paste firmware .bin URL here">
-<button id="linkBtn" class="loading-shimmer" onclick="updateViaLink()" disabled>
-    🚀 Update from Link
-    <div class="bounce-ball" style="display: none;"></div>
-</button>
-
-<h3>Upload .bin File</h3>
-<input type="file" id="fileInput" accept=".bin">
-<button id="uploadBtn" onclick="uploadFile()" disabled>
-    📤 Upload & Update
-</button>
-
-<div id="status"></div>
+</div>
 
 <script>
-function setLoading(buttonId, isLoading) {
-    const btn = document.getElementById(buttonId);
-    
-    if (isLoading) {
-        btn.classList.add('loading');
-        const dots = btn.querySelector('.dots');
-        const ball = btn.querySelector('.bounce-ball');
-        if (dots) dots.style.display = 'inline-flex';
-        if (ball) ball.style.display = 'inline-flex';
-    } else {
-        btn.classList.remove('loading');
-        const dots = btn.querySelector('.dots');
-        const ball = btn.querySelector('.bounce-ball');
-        if (dots) dots.style.display = 'none';
-        if (ball) ball.style.display = 'none';
-    }
-}
-
-function showStatus(message, show = true) {
-    const status = document.getElementById('status');
-    status.innerText = message;
-    status.style.display = show ? 'block' : 'none';
-}
-
-function checkDevice() {
-    const deviceId = document.getElementById("deviceId").value;
-    if (!deviceId) {
-        alert("Please enter device ID");
-        return;
-    }
-
-    setLoading('checkBtn', true);
-    showStatus('Checking device status...', true);
-
-    fetch(`/check-device?device=${deviceId}`)
-    .then(res => res.json())
-    .then(data => {
-        const statusText = document.getElementById("deviceStatus");
-        const linkBtn = document.getElementById("linkBtn");
-        const uploadBtn = document.getElementById("uploadBtn");
-
-        if (data.online) {
-            statusText.innerText = " Device is ONLINE";
-            statusText.className = "online";
-            linkBtn.disabled = false;
-            uploadBtn.disabled = false;
-        } else {
-            statusText.innerText = " Device is OFFLINE";
-            statusText.className = "offline";
-            linkBtn.disabled = true;
-            uploadBtn.disabled = true;
+    function triggerFileInput() {
+        const fileInput = document.getElementById('fileInput');
+        const dropzone = document.getElementById('dropzone');
+        if (!dropzone.classList.contains('disabled')) {
+            fileInput.click();
         }
-    })
-    .catch(() => {
-        document.getElementById("deviceStatus").innerText = " Error checking device";
-    })
-    .finally(() => {
-        setLoading('checkBtn', false);
-        showStatus('', false);
-    });
-}
-
-function updateViaLink() {
-    const deviceId = document.getElementById("deviceId").value;
-    const link = document.getElementById("gitlink").value;
-
-    if (!link) {
-        alert("Please enter firmware URL");
-        return;
     }
 
-    setLoading('linkBtn', true);
-    showStatus('Updating firmware from link...', true);
-
-    fetch(`/update-link/${deviceId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: link })
-    })
-    .then(res => res.text())
-    .then(data => {
-        showStatus(` ${data}`, true);
-    })
-    .catch(() => {
-        showStatus(' Update failed', true);
-    })
-    .finally(() => {
-        setLoading('linkBtn', false);
-    });
-}
-
-function uploadFile() {
-    const deviceId = document.getElementById("deviceId").value;
-    const file = document.getElementById("fileInput").files[0];
-
-    if (!file) {
-        alert("Please select a .bin file");
-        return;
+    function handleFileSelect(event) {
+        const fileName = event.target.files[0]?.name;
+        if (fileName) {
+            document.getElementById('dropzoneText').innerText = `Selected: ${fileName}`;
+            document.getElementById('flashBtn').disabled = false;
+        }
     }
 
-    setLoading('uploadBtn', true);
-    showStatus('Uploading firmware...', true);
+    function setLoading(buttonId, isLoading) {
+        const btn = document.getElementById(buttonId);
+        if (isLoading) {
+            btn.classList.add('loading');
+            btn.disabled = true;
+        } else {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    }
 
-    const formData = new FormData();
-    formData.append("firmware", file);
+    function showStatus(message, type = 'info') {
+        const status = document.getElementById('status');
+        status.innerText = message;
+        status.className = `status-${type}`;
+        status.style.display = message ? 'block' : 'none';
+        
+        if (message) {
+            status.className = '';
+            status.classList.add('status-' + type);
+            status.style.display = 'block';
+        } else {
+            status.style.display = 'none';
+        }
+    }
 
-    fetch(`/upload/${deviceId}`, {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.text())
-    .then(data => {
-        showStatus(` ${data}`, true);
-    })
-    .catch(() => {
-        showStatus(' Upload failed', true);
-    })
-    .finally(() => {
-        setLoading('uploadBtn', false);
-    });
-}
+    function checkDevice() {
+        const deviceId = document.getElementById("deviceId").value;
+        if (!deviceId) {
+            alert("Please enter device ID");
+            return;
+        }
+
+        setLoading('checkBtn', true);
+        showStatus('Checking device status...', 'info');
+
+        fetch(`/check-device?device=${deviceId}`)
+        .then(res => res.json())
+        .then(data => {
+            const statusContainer = document.getElementById("deviceStatusContainer");
+            const linkBtn = document.getElementById("linkBtn");
+            const dropzone = document.getElementById("dropzone");
+            const dropzoneText = document.getElementById("dropzoneText");
+
+            if (data.online) {
+                statusContainer.innerHTML = `<span class="device-status-badge online-badge"><i class="fas fa-check-circle"></i> Device is ONLINE</span>`;
+                linkBtn.disabled = false;
+                dropzone.classList.remove('disabled');
+                dropzoneText.innerText = "Click or drag to upload .bin";
+            } else {
+                statusContainer.innerHTML = `<span class="device-status-badge offline-badge"><i class="fas fa-times-circle"></i> Device is OFFLINE</span>`;
+                linkBtn.disabled = true;
+                dropzone.classList.add('disabled');
+                dropzoneText.innerText = "Verify State First";
+            }
+        })
+        .catch(() => {
+            document.getElementById("deviceStatusContainer").innerHTML = `<span class="device-status-badge offline-badge">Error checking device</span>`;
+        })
+        .finally(() => {
+            setLoading('checkBtn', false);
+            showStatus('', 'info');
+        });
+    }
+
+    function updateViaLink() {
+        const deviceId = document.getElementById("deviceId").value;
+        const link = document.getElementById("gitlink").value;
+
+        if (!link) {
+            alert("Please enter firmware URL");
+            return;
+        }
+
+        setLoading('linkBtn', true);
+        showStatus('Updating firmware from link...', 'info');
+
+        fetch(`/update-link/${deviceId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: link })
+        })
+        .then(res => res.text())
+        .then(data => {
+            showStatus(data, 'success');
+        })
+        .catch(() => {
+            showStatus('Update failed', 'error');
+        })
+        .finally(() => {
+            setLoading('linkBtn', false);
+        });
+    }
+
+    function uploadFile() {
+        const deviceId = document.getElementById("deviceId").value;
+        const file = document.getElementById("fileInput").files[0];
+
+        if (!file) {
+            alert("Please select a .bin file");
+            return;
+        }
+
+        setLoading('flashBtn', true);
+        showStatus('Uploading firmware...', 'info');
+
+        const formData = new FormData();
+        formData.append("firmware", file);
+
+        fetch(`/upload/${deviceId}`, {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.text())
+        .then(data => {
+            showStatus(data, 'success');
+        })
+        .catch(() => {
+            showStatus('Upload failed', 'error');
+        })
+        .finally(() => {
+            setLoading('flashBtn', false);
+        });
+    }
 </script>
 
 </body>
