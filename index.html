@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OTA Control Center</title>
+
     <!-- Modern Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/all.min.css/6.4.0/css/all.min.css">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- SweetAlert2 CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+
     <style>
         :root {
             --primary-color: #3B82F6;
@@ -20,16 +24,10 @@
             --text-muted: #64748B;
             --border-color: #E2E8F0;
             --input-bg: #FFFFFF;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -42,14 +40,11 @@
             padding: 20px;
         }
 
-        .container {
-            width: 100%;
-            max-width: 800px;
-        }
+        .container { width: 100%; max-width: 800px; }
 
         .card {
             background-color: var(--card-bg);
-            border-radius: 12px;
+            border-radius: 16px;
             box-shadow: var(--shadow-lg);
             padding: 40px;
             border: 1px solid var(--border-color);
@@ -63,31 +58,23 @@
             color: var(--text-main);
         }
 
-        .section {
-            margin-bottom: 32px;
-        }
+        .section { margin-bottom: 32px; }
 
         .section label {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 11px;
             font-weight: 700;
             color: var(--text-muted);
             margin-bottom: 12px;
             letter-spacing: 0.05em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            text-transform: uppercase;
         }
 
-        .section label i {
-            font-size: 14px;
-            color: #4F46E5; /* Indigo shade for label icons */
-        }
+        .section label i { font-size: 14px; color: #4F46E5; }
 
-        .input-group {
-            display: flex;
-            gap: 12px;
-        }
+        .input-group { display: flex; gap: 12px; }
 
         input[type="text"] {
             flex: 1;
@@ -97,6 +84,7 @@
             background-color: var(--input-bg);
             font-size: 14px;
             color: var(--text-main);
+            font-family: 'Inter', sans-serif;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
@@ -106,9 +94,7 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        input[type="text"]::placeholder {
-            color: #A1A1AA;
-        }
+        input[type="text"]::placeholder { color: #A1A1AA; }
 
         button {
             display: flex;
@@ -123,31 +109,14 @@
             transition: all 0.2s;
             border: none;
             white-space: nowrap;
+            font-family: 'Inter', sans-serif;
         }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-1px); }
 
-        .btn-primary:hover:not(:disabled) {
-            background-color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background-color: #D1D5DB;
-            color: white;
-        }
-
-        .btn-secondary:not(:disabled) {
-            background-color: #9CA3AF;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background-color: #6B7280;
-            transform: translateY(-1px);
-        }
+        .btn-secondary { background-color: #9CA3AF; color: white; }
+        .btn-secondary:hover:not(:disabled) { background-color: #6B7280; transform: translateY(-1px); }
 
         .btn-large {
             width: 100%;
@@ -155,21 +124,17 @@
             font-size: 15px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            background-color: #D1D5DB; /* Grey as per image until active */
+            background-color: #D1D5DB;
             color: white;
             margin-top: 8px;
+            border-radius: 10px;
         }
 
-        .btn-large:not(:disabled) {
-            background-color: var(--primary-color);
-        }
+        .btn-large:not(:disabled) { background-color: var(--primary-color); }
 
-        button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* Dropzone Styling */
+        /* ── Dropzone ── */
         .dropzone {
             border: 2px dashed #E2E8F0;
             border-radius: 12px;
@@ -177,19 +142,32 @@
             text-align: center;
             background-color: #FAFAFA;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
             position: relative;
         }
 
-        .dropzone:hover {
+        .dropzone:hover:not(.disabled) {
             border-color: var(--primary-color);
-            background-color: #F8FAFC;
+            background-color: #F0F7FF;
+        }
+
+        .dropzone.dragover {
+            border-color: #4F46E5;
+            background-color: #EEF2FF;
+            transform: scale(1.01);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+        }
+
+        .dropzone.file-ready {
+            border-color: #22C55E;
+            background-color: #F0FDF4;
         }
 
         .dropzone.disabled {
             cursor: not-allowed;
             background-color: #F8F9FA;
             border-color: #EDF2F7;
+            opacity: 0.65;
         }
 
         .dropzone-content {
@@ -197,10 +175,11 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
+            pointer-events: none;
         }
 
         .upload-icon {
-            font-size: 40px;
+            font-size: 38px;
             color: #C7D2FE;
             background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
             width: 80px;
@@ -210,13 +189,28 @@
             justify-content: center;
             border-radius: 16px;
             margin-bottom: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .dropzone.dragover .upload-icon {
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .dropzone.file-ready .upload-icon {
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            color: white;
         }
 
         .dropzone-main-text {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 600;
             color: #64748B;
+            transition: color 0.2s;
         }
+
+        .dropzone.file-ready .dropzone-main-text { color: #16A34A; }
 
         .dropzone-sub-text {
             font-size: 12px;
@@ -224,9 +218,10 @@
             font-weight: 500;
         }
 
+        /* ── Status bar ── */
         #status {
-            margin-top: 24px;
-            padding: 16px;
+            margin-top: 20px;
+            padding: 14px 16px;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
@@ -234,55 +229,209 @@
             display: none;
         }
 
-        .status-info { background-color: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
-        .status-success { background-color: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
-        .status-error { background-color: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+        .status-info    { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+        .status-success { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+        .status-error   { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
 
+        /* ── Upload Status Panel ── */
+        #upload-status-panel {
+            display: none;
+            margin-top: 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            animation: panelIn 0.3s ease;
+        }
+
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .usp-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* uploading */
+        .usp-uploading .usp-header { background: #EFF6FF; color: #1E40AF; border-bottom: 1px solid #BFDBFE; }
+        /* waiting for device */
+        .usp-waiting  .usp-header { background: #FFFBEB; color: #92400E; border-bottom: 1px solid #FDE68A; }
+        /* success */
+        .usp-success  .usp-header { background: #F0FDF4; color: #166534; border-bottom: 1px solid #BBF7D0; }
+        /* error */
+        .usp-error    .usp-header { background: #FEF2F2; color: #991B1B; border-bottom: 1px solid #FECACA; }
+
+        /* Amber spinner for waiting state */
+        .usp-spinner-amber {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(146, 64, 14, 0.2);
+            border-top-color: #D97706;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        /* Amber progress bar for waiting state */
+        .usp-waiting .usp-progress-bar {
+            background: linear-gradient(90deg, #F59E0B, #FBBF24);
+        }
+        .usp-waiting .usp-progress { background: #FDE68A; }
+
+        .usp-body {
+            padding: 14px 18px;
+            background: #FAFAFA;
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        .usp-meta {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .usp-meta-row {
+            display: flex;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .usp-meta-label { font-weight: 600; color: #374151; min-width: 90px; }
+        .usp-meta-value { color: #6B7280; word-break: break-all; }
+
+        /* Indeterminate progress bar */
+        .usp-progress {
+            height: 3px;
+            background: #BFDBFE;
+            overflow: hidden;
+        }
+
+        .usp-progress-bar {
+            height: 100%;
+            width: 40%;
+            background: linear-gradient(90deg, #3B82F6, #818CF8);
+            border-radius: 2px;
+            animation: progressSlide 1.4s ease-in-out infinite;
+        }
+
+        @keyframes progressSlide {
+            0%   { transform: translateX(-100%); }
+            50%  { transform: translateX(150%); }
+            100% { transform: translateX(350%); }
+        }
+
+        /* Mini spinner inside header */
+        .usp-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(30,64,175,0.25);
+            border-top-color: #1E40AF;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        /* ── Device badge ── */
         .device-status-badge {
-            display: inline-block;
-            padding: 4px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
-            margin-top: 8px;
+            margin-top: 10px;
         }
 
-        .online-badge { background-color: #DCFCE7; color: #166534; }
-        .offline-badge { background-color: #FEE2E2; color: #991B1B; }
+        .online-badge  { background: #DCFCE7; color: #166534; }
+        .offline-badge { background: #FEE2E2; color: #991B1B; }
 
-        /* Loading Spinner */
+        /* ── Loading Spinner ── */
         .spinner {
             width: 18px;
             height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
+            border: 2px solid rgba(255,255,255,0.35);
             border-top-color: #fff;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             display: none;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         button.loading .spinner { display: block; }
-        button.loading i { display: none; }
+        button.loading .btn-icon { display: none; }
 
+        /* ── SweetAlert2 custom overrides ── */
+        .swal2-popup {
+            font-family: 'Inter', sans-serif !important;
+            border-radius: 20px !important;
+        }
+
+        .swal2-title {
+            font-size: 20px !important;
+            font-weight: 700 !important;
+            color: #0F172A !important;
+        }
+
+        .swal2-html-container {
+            font-size: 14px !important;
+            color: #64748B !important;
+            line-height: 1.65 !important;
+        }
+
+        .swal2-confirm {
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 600 !important;
+            border-radius: 10px !important;
+            padding: 11px 28px !important;
+            font-size: 14px !important;
+            box-shadow: none !important;
+        }
+
+        .swal2-cancel {
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 600 !important;
+            border-radius: 10px !important;
+            padding: 11px 28px !important;
+            font-size: 14px !important;
+            box-shadow: none !important;
+        }
+
+        /* Toast override */
+        .swal2-toast .swal2-title {
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            color: inherit !important;
+        }
+
+        .swal2-toast .swal2-html-container {
+            font-size: 13px !important;
+            color: inherit !important;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h1>OTA Control Center</h1>
+        <h1>🚀 OTA Control Center</h1>
 
         <!-- Device ID Section -->
         <div class="section">
-            <label>ENTER DEVICE ID</label>
+            <label><i class="fas fa-microchip"></i> ENTER DEVICE ID</label>
             <div class="input-group">
                 <input type="text" id="deviceId" placeholder="Enter device ID (e.g. DEVICE_001)">
                 <button id="checkBtn" class="btn-primary" onclick="checkDevice()">
-                    <i class="fas fa-search"></i>
+                    <i class="fas fa-search btn-icon"></i>
                     <div class="spinner"></div>
                     VERIFY STATE
                 </button>
@@ -296,7 +445,7 @@
             <div class="input-group">
                 <input type="text" id="gitlink" placeholder="https://raw.githubusercontent.com/.../firmware.bin">
                 <button id="linkBtn" class="btn-secondary" onclick="updateViaLink()" disabled>
-                    <i class="fas fa-rocket"></i>
+                    <i class="fas fa-rocket btn-icon"></i>
                     <div class="spinner"></div>
                     PUSH LINK
                 </button>
@@ -312,165 +461,521 @@
                         <i class="fas fa-cloud-arrow-up"></i>
                     </div>
                     <p class="dropzone-main-text" id="dropzoneText">Verify State First</p>
-                    <p class="dropzone-sub-text">ACCEPTS RAW .BIN FILES UP TO 4MB</p>
+                    <p class="dropzone-sub-text" id="dropzone-sub">ACCEPTS RAW .BIN FILES UP TO 4MB</p>
                 </div>
-                <input type="file" id="fileInput" accept=".bin" style="display: none;" onchange="handleFileSelect(event)">
+                <input type="file" id="fileInput" accept=".bin" style="display:none;" onchange="handleFileSelect(event)">
             </div>
         </div>
 
-        <!-- Final Action Button -->
+        <!-- Flash Button -->
         <button id="flashBtn" class="btn-large" onclick="uploadFile()" disabled>
-            <i class="fas fa-microchip"></i>
+            <i class="fas fa-bolt btn-icon"></i>
             <div class="spinner"></div>
             INITIATE BINARY FLASH ›
         </button>
 
         <div id="status"></div>
+
+        <!-- Upload Status Panel -->
+        <div id="upload-status-panel">
+            <div class="usp-header">
+                <span id="usp-icon"></span>
+                <span id="usp-title"></span>
+            </div>
+            <div id="usp-progress" class="usp-progress" style="display:none;">
+                <div class="usp-progress-bar"></div>
+            </div>
+            <div class="usp-body">
+                <div id="usp-message"></div>
+                <div id="usp-meta" class="usp-meta"></div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
 <script>
-    function triggerFileInput() {
+
+    // ══════════════════════════════════════════════════════════
+    // SweetAlert2 Helpers
+    // ══════════════════════════════════════════════════════════
+
+    // Full center popup
+    function showAlert(icon, title, html, confirmColor) {
+        return Swal.fire({
+            icon,
+            title,
+            html,
+            confirmButtonText: 'OK',
+            confirmButtonColor: confirmColor,
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            showClass: {
+                popup: 'animate__animated animate__fadeInDown'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutUp'
+            },
+            customClass: {
+                popup: 'swal2-popup',
+                title: 'swal2-title',
+                htmlContainer: 'swal2-html-container',
+                confirmButton: 'swal2-confirm'
+            }
+        });
+    }
+
+    // Corner toast
+    function showToast(icon, title, text) {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+        Toast.fire({ icon, title, text });
+    }
+
+
+    // ══════════════════════════════════════════════════════════
+    // Drag & Drop Dropzone
+    // ══════════════════════════════════════════════════════════
+
+    function initDropzone() {
+        const dropzone  = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt =>
+            dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); })
+        );
+
+        dropzone.addEventListener('dragenter', () => {
+            if (!dropzone.classList.contains('disabled')) dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragover', () => {
+            if (!dropzone.classList.contains('disabled')) dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+
+        dropzone.addEventListener('drop', e => {
+            dropzone.classList.remove('dragover');
+            if (dropzone.classList.contains('disabled')) {
+                showAlert('warning', 'Device Not Verified',
+                    'Please <b>Verify Device State</b> before uploading a firmware file.',
+                    '#F59E0B');
+                return;
+            }
+            const file = e.dataTransfer.files[0];
+            if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.bin')) {
+                showAlert('error', 'Invalid File Type',
+                    'Only <b>.bin</b> firmware files are accepted.',
+                    '#EF4444');
+                return;
+            }
+            applySelectedFile(file, fileInput);
+        });
+    }
+
+    function applySelectedFile(file, fileInputEl) {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInputEl.files = dataTransfer.files;
+
         const dropzone = document.getElementById('dropzone');
-        if (!dropzone.classList.contains('disabled')) {
-            fileInput.click();
-        }
+        dropzone.classList.add('file-ready');
+        document.getElementById('dropzoneText').innerText  = `✅ ${file.name}`;
+        document.getElementById('dropzone-sub').innerText  = `${(file.size / 1024).toFixed(1)} KB  •  Ready to flash`;
+        document.getElementById('flashBtn').disabled = false;
+    }
+
+    function triggerFileInput() {
+        const dropzone = document.getElementById('dropzone');
+        if (!dropzone.classList.contains('disabled'))
+            document.getElementById('fileInput').click();
     }
 
     function handleFileSelect(event) {
-        const fileName = event.target.files[0]?.name;
-        if (fileName) {
-            document.getElementById('dropzoneText').innerText = `Selected: ${fileName}`;
-            document.getElementById('flashBtn').disabled = false;
-        }
+        const file = event.target.files[0];
+        if (file) applySelectedFile(file, event.target);
     }
+
+
+    // ══════════════════════════════════════════════════════════
+    // Helpers
+    // ══════════════════════════════════════════════════════════
 
     function setLoading(buttonId, isLoading) {
         const btn = document.getElementById(buttonId);
-        if (isLoading) {
-            btn.classList.add('loading');
-            btn.disabled = true;
-        } else {
-            btn.classList.remove('loading');
-            btn.disabled = false;
-        }
+        btn.classList.toggle('loading', isLoading);
+        btn.disabled = isLoading;
     }
 
     function showStatus(message, type = 'info') {
-        const status = document.getElementById('status');
-        status.innerText = message;
-        status.className = `status-${type}`;
-        status.style.display = message ? 'block' : 'none';
-        
+        const el = document.getElementById('status');
         if (message) {
-            status.className = '';
-            status.classList.add('status-' + type);
-            status.style.display = 'block';
+            el.className = 'status-' + type;
+            el.innerText = message;
+            el.style.display = 'block';
         } else {
-            status.style.display = 'none';
+            el.style.display = 'none';
         }
     }
 
+
+    // ══════════════════════════════════════════════════════════
+    // 1️⃣  Check Device
+    // ══════════════════════════════════════════════════════════
+
     function checkDevice() {
-        const deviceId = document.getElementById("deviceId").value;
+        const deviceId = document.getElementById('deviceId').value.trim();
+
         if (!deviceId) {
-            alert("Please enter device ID");
+            showAlert('warning', 'Missing Device ID',
+                'Please enter a <b>Device ID</b> before verifying.',
+                '#F59E0B');
             return;
         }
 
         setLoading('checkBtn', true);
-        showStatus('Checking device status...', 'info');
 
-        fetch(`/check-device?device=${deviceId}`)
+        fetch(`/check-device?device=${encodeURIComponent(deviceId)}`)
         .then(res => res.json())
         .then(data => {
-            const statusContainer = document.getElementById("deviceStatusContainer");
-            const linkBtn = document.getElementById("linkBtn");
-            const dropzone = document.getElementById("dropzone");
-            const dropzoneText = document.getElementById("dropzoneText");
+            const statusContainer = document.getElementById('deviceStatusContainer');
+            const linkBtn         = document.getElementById('linkBtn');
+            const dropzone        = document.getElementById('dropzone');
+            const dropzoneText    = document.getElementById('dropzoneText');
 
             if (data.online) {
-                statusContainer.innerHTML = `<span class="device-status-badge online-badge"><i class="fas fa-check-circle"></i> Device is ONLINE</span>`;
+                statusContainer.innerHTML =
+                    `<span class="device-status-badge online-badge">
+                        <i class="fas fa-circle-check"></i> Device is ONLINE
+                     </span>`;
                 linkBtn.disabled = false;
                 dropzone.classList.remove('disabled');
-                dropzoneText.innerText = "Click or drag to upload .bin";
+                dropzoneText.innerText = 'Click or drag & drop a .bin file here';
+
+                // SweetAlert2 — success popup
+                showAlert('success',
+                    '✅ Device Online!',
+                    `<b>"${deviceId}"</b> is connected and ready to receive OTA firmware updates.`,
+                    '#22C55E');
+
+                // Toast notification
+                showToast('success', 'Device Online', `"${deviceId}" is ready for OTA.`);
+
             } else {
-                statusContainer.innerHTML = `<span class="device-status-badge offline-badge"><i class="fas fa-times-circle"></i> Device is OFFLINE</span>`;
+                statusContainer.innerHTML =
+                    `<span class="device-status-badge offline-badge">
+                        <i class="fas fa-circle-xmark"></i> Device is OFFLINE
+                     </span>`;
                 linkBtn.disabled = true;
                 dropzone.classList.add('disabled');
-                dropzoneText.innerText = "Verify State First";
+                dropzoneText.innerText = 'Verify State First';
+
+                // SweetAlert2 — error popup
+                showAlert('error',
+                    '❌ Device Offline',
+                    `<b>"${deviceId}"</b> is not reachable.<br>Please check power and network connection.`,
+                    '#EF4444');
+
+                // Toast notification
+                showToast('error', 'Device Offline', `"${deviceId}" is not reachable.`);
             }
         })
         .catch(() => {
-            document.getElementById("deviceStatusContainer").innerHTML = `<span class="device-status-badge offline-badge">Error checking device</span>`;
+            // Any error (404, network issue) → treat as offline
+            const statusContainer = document.getElementById('deviceStatusContainer');
+            const linkBtn         = document.getElementById('linkBtn');
+            const dropzone        = document.getElementById('dropzone');
+            const dropzoneText    = document.getElementById('dropzoneText');
+
+            statusContainer.innerHTML =
+                `<span class="device-status-badge offline-badge">
+                    <i class="fas fa-circle-xmark"></i> Device is OFFLINE
+                 </span>`;
+
+            linkBtn.disabled = true;
+            dropzone.classList.add('disabled');
+            dropzoneText.innerText = 'Verify State First';
+
+            showAlert('error',
+                '❌ Device Offline',
+                `<b>"${document.getElementById('deviceId').value.trim()}"</b> is not reachable.<br>Please check power and network connection.`,
+                '#EF4444');
+
+            showToast('error', 'Device Offline', `"${document.getElementById('deviceId').value.trim()}" is not reachable.`);
         })
-        .finally(() => {
-            setLoading('checkBtn', false);
-            showStatus('', 'info');
-        });
+        .finally(() => setLoading('checkBtn', false));
     }
 
+
+    // ══════════════════════════════════════════════════════════
+    // 2️⃣  Update via GitHub Link
+    // ══════════════════════════════════════════════════════════
+
     function updateViaLink() {
-        const deviceId = document.getElementById("deviceId").value;
-        const link = document.getElementById("gitlink").value;
+        const deviceId = document.getElementById('deviceId').value.trim();
+        const link     = document.getElementById('gitlink').value.trim();
 
         if (!link) {
-            alert("Please enter firmware URL");
+            showAlert('warning', 'Missing URL',
+                'Please enter a valid <b>GitHub Raw URL</b> for the firmware binary.',
+                '#F59E0B');
             return;
         }
 
         setLoading('linkBtn', true);
-        showStatus('Updating firmware from link...', 'info');
+        showStatus('Fetching firmware from GitHub link…', 'info');
 
-        fetch(`/update-link/${deviceId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+        fetch(`/update-link/${encodeURIComponent(deviceId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: link })
         })
-        .then(res => res.text())
+        .then(res => {
+            if (!res.ok) throw new Error(res.status);
+            return res.text();
+        })
         .then(data => {
-            showStatus(data, 'success');
+            showStatus('', 'info');
+
+            // SweetAlert2 — success popup
+            showAlert('success',
+                '🚀 Firmware Queued!',
+                `Firmware for <b>"${deviceId}"</b> has been fetched from GitHub and is queued for OTA delivery.`,
+                '#22C55E');
+
+            // Toast notification
+            showToast('success', 'Firmware Queued', `Ready to flash "${deviceId}" via GitHub link.`);
         })
         .catch(() => {
-            showStatus('Update failed', 'error');
+            showStatus('', 'info');
+
+            showAlert('error', 'Update Failed',
+                'Could not fetch firmware from the provided GitHub link.<br>Please verify the URL and try again.',
+                '#EF4444');
+
+            showToast('error', 'Update Failed', 'Could not fetch firmware from the link.');
         })
-        .finally(() => {
-            setLoading('linkBtn', false);
-        });
+        .finally(() => setLoading('linkBtn', false));
+    }
+
+
+    // ══════════════════════════════════════════════════════════
+    // Upload Status Panel Helper
+    // ══════════════════════════════════════════════════════════
+
+    function showUploadPanel(state, title, message, meta) {
+        const panel    = document.getElementById('upload-status-panel');
+        const iconEl   = document.getElementById('usp-icon');
+        const titleEl  = document.getElementById('usp-title');
+        const msgEl    = document.getElementById('usp-message');
+        const metaEl   = document.getElementById('usp-meta');
+        const progress = document.getElementById('usp-progress');
+
+        // Remove previous state classes
+        panel.classList.remove('usp-uploading', 'usp-success', 'usp-error');
+        panel.classList.add(`usp-${state}`);
+        panel.style.display = 'block';
+
+        titleEl.textContent = title;
+        msgEl.innerHTML     = message;
+        metaEl.innerHTML    = '';
+
+        if (state === 'uploading') {
+            iconEl.innerHTML  = '<span class="usp-spinner"></span>';
+            progress.style.display = 'block';
+        } else if (state === 'waiting') {
+            iconEl.innerHTML  = '<span class="usp-spinner-amber"></span>';
+            progress.style.display = 'block';
+        } else if (state === 'success') {
+            iconEl.innerHTML  = '✅';
+            progress.style.display = 'none';
+        } else {
+            iconEl.innerHTML  = '❌';
+            progress.style.display = 'none';
+        }
+
+        // Render metadata rows
+        if (meta && Object.keys(meta).length) {
+            Object.entries(meta).forEach(([label, value]) => {
+                const row = document.createElement('div');
+                row.className = 'usp-meta-row';
+                row.innerHTML = `<span class="usp-meta-label">${label}</span><span class="usp-meta-value">${value}</span>`;
+                metaEl.appendChild(row);
+            });
+        }
+    }
+
+    function hideUploadPanel() {
+        document.getElementById('upload-status-panel').style.display = 'none';
+    }
+
+
+    // ══════════════════════════════════════════════════════════
+    // 3️⃣  Upload .bin File  (with async device-confirmation polling)
+    // ══════════════════════════════════════════════════════════
+
+    let _pollTimer    = null;   // setInterval handle
+    let _pollTimeout  = null;   // setTimeout handle for 5-min cutoff
+    const POLL_MS     = 2500;   // poll every 2.5 seconds
+    const TIMEOUT_MS  = 300000; // give up after 5 minutes
+
+    function stopPolling() {
+        if (_pollTimer)   { clearInterval(_pollTimer);  _pollTimer   = null; }
+        if (_pollTimeout) { clearTimeout(_pollTimeout); _pollTimeout = null; }
+    }
+
+    function startPolling(deviceId, uploadTimestamp, fileName) {
+
+        // 5-minute hard timeout
+        _pollTimeout = setTimeout(() => {
+            stopPolling();
+            setLoading('flashBtn', false);
+            showUploadPanel(
+                'error',
+                '⏱️ Confirmation Timeout',
+                'No response was received from the device within 5 minutes. The firmware was uploaded to the server but device confirmation is pending.',
+                { 'Device': deviceId, 'File': fileName, 'Uploaded at': new Date(uploadTimestamp).toLocaleString() }
+            );
+            showToast('warning', 'Timeout', 'No device confirmation received within 5 minutes.');
+        }, TIMEOUT_MS);
+
+        // Poll every 2.5 seconds
+        _pollTimer = setInterval(async () => {
+            try {
+                const res  = await fetch(`/device-message/${encodeURIComponent(deviceId)}`);
+                const data = await res.json();
+
+                if (data.received) {
+                    stopPolling();
+                    setLoading('flashBtn', false);
+
+                    // ── Final success state ──
+                    showUploadPanel(
+                        'success',
+                        '✅ BIN File Uploaded Successfully',
+                        `✅ ${data.message}`,
+                        {
+                            'Device':    data.device,
+                            'Timestamp': new Date(data.timestamp).toLocaleString(),
+                            'File':      fileName
+                        }
+                    );
+
+                    showAlert('success',
+                        '🎉 Device Confirmed!',
+                        `✅ <b>BIN File Uploaded Successfully</b><br>✅ <b>${data.message}</b><br><br>` +
+                        `<small style="color:#64748B">Device: <b>${data.device}</b> &nbsp;•&nbsp; ${new Date(data.timestamp).toLocaleString()}</small>`,
+                        '#22C55E');
+
+                    showToast('success', 'Firmware Confirmed! 🎉', data.message);
+
+                    // Reset dropzone
+                    document.getElementById('dropzone').classList.remove('file-ready');
+                    document.getElementById('dropzoneText').innerText = 'Click or drag & drop a .bin file here';
+                    document.getElementById('dropzone-sub').innerText = 'ACCEPTS RAW .BIN FILES UP TO 4MB';
+                    document.getElementById('fileInput').value = '';
+                    document.getElementById('flashBtn').disabled = true;
+                }
+                // if not received yet — silently continue polling
+
+            } catch (pollErr) {
+                stopPolling();
+                setLoading('flashBtn', false);
+                showUploadPanel(
+                    'error',
+                    'Polling Error',
+                    'Lost connection to the server while waiting for device confirmation.',
+                    null
+                );
+                showToast('error', 'Polling Error', 'Connection lost during device confirmation.');
+            }
+        }, POLL_MS);
     }
 
     function uploadFile() {
-        const deviceId = document.getElementById("deviceId").value;
-        const file = document.getElementById("fileInput").files[0];
+        const deviceId = document.getElementById('deviceId').value.trim();
+        const file     = document.getElementById('fileInput').files[0];
 
         if (!file) {
-            alert("Please select a .bin file");
+            showAlert('warning', 'No File Selected',
+                'Please <b>select or drop</b> a .bin firmware file before flashing.',
+                '#F59E0B');
             return;
         }
 
+        // Stop any existing poll from a previous upload
+        stopPolling();
+
+        // ── Phase 1: Uploading ──
         setLoading('flashBtn', true);
-        showStatus('Uploading firmware...', 'info');
+        showStatus('', 'info');
+        showUploadPanel(
+            'uploading',
+            'Uploading BIN file…',
+            'Please wait. Your firmware is being transferred to the server.',
+            null
+        );
 
         const formData = new FormData();
-        formData.append("firmware", file);
+        formData.append('firmware', file);
 
-        fetch(`/upload/${deviceId}`, {
-            method: "POST",
+        fetch(`/upload-bin/${encodeURIComponent(deviceId)}`, {
+            method: 'POST',
             body: formData
         })
-        .then(res => res.text())
-        .then(data => {
-            showStatus(data, 'success');
+        .then(async res => {
+            let data;
+            try   { data = await res.json(); }
+            catch { data = { success: false, message: 'Server returned an unexpected response.' }; }
+
+            if (!res.ok || !data.success) {
+                // ── Upload failed ──
+                setLoading('flashBtn', false);
+                const errMsg = data.message || 'Upload failed. Please try again.';
+                showUploadPanel('error', 'Upload Failed', errMsg, null);
+                showToast('error', 'Upload Failed', errMsg);
+                return;
+            }
+
+            // ── Phase 2: BIN uploaded — waiting for device confirmation ──
+            showUploadPanel(
+                'waiting',
+                'BIN uploaded successfully. Waiting for device confirmation…',
+                'The firmware has been received by the server. Waiting for the device to confirm the flash…',
+                { 'Device': deviceId, 'File': data.firmware, 'Uploaded at': new Date(data.timestamp).toLocaleString() }
+            );
+
+            showToast('info', 'BIN Uploaded', 'Waiting for device confirmation...');
+
+            // Start polling for device message
+            startPolling(deviceId, data.timestamp, file.name);
         })
         .catch(() => {
-            showStatus('Upload failed', 'error');
-        })
-        .finally(() => {
             setLoading('flashBtn', false);
+            const errMsg = 'Network error: could not reach the server. Please check your connection.';
+            showUploadPanel('error', 'Upload Failed', errMsg, null);
+            showToast('error', 'Upload Failed', errMsg);
         });
+        // Note: no .finally(setLoading) here — button stays disabled until confirmation or error
     }
-</script>
 
+
+    // ══════════════════════════════════════════════════════════
+    // Init
+    // ══════════════════════════════════════════════════════════
+    document.addEventListener('DOMContentLoaded', initDropzone);
+
+</script>
 </body>
 </html>

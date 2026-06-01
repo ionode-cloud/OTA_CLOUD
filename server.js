@@ -7,7 +7,7 @@ const cors = require("cors");
 const path = require("path");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Environment-based Server URL
 const SERVER_URL = process.env.SERVER_URL;
@@ -17,7 +17,7 @@ app.use(express.static(__dirname));
 
 const upload = multer({
     dest: "uploads/",
-    limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+    limits: { fileSize: 50 * 1024 * 1024 }
 });
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -26,9 +26,10 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // ===============================
 let deviceUpdates = {};
 let deviceOnlineStatus = {};
+let deviceMessages = {};   
 
 // ===============================
-// 1️⃣ Device Ping (ESP32 sends this)
+// Device Ping (ESP32 sends this)
 // ===============================
 app.get("/device-ping", (req, res) => {
 
@@ -43,7 +44,7 @@ app.get("/device-ping", (req, res) => {
 });
 
 // ===============================
-// 2️⃣ Check Device Online Status (Web uses this)
+// Check Device Online Status (Web uses this)
 // ===============================
 app.get("/check-device", (req, res) => {
 
@@ -63,14 +64,27 @@ app.get("/check-device", (req, res) => {
 });
 
 // ===============================
-// 3️⃣ Upload .bin for Specific Device
+// Upload .bin for Specific Device
 // ===============================
-app.post("/upload/:deviceId", upload.single("firmware"), (req, res) => {
+app.post("/upload-bin/:deviceId", upload.single("firmware"), (req, res) => {
 
     const deviceId = req.params.deviceId;
 
     if (!req.file) {
-        return res.status(400).send("No file uploaded");
+        return res.status(400).json({
+            success: false,
+            message: "No BIN file was received. Please select a valid .bin firmware file and try again."
+        });
+    }
+
+    // Validate file extension
+    const originalName = req.file.originalname || '';
+    if (!originalName.toLowerCase().endsWith('.bin')) {
+        fs.unlink(req.file.path, () => {});
+        return res.status(400).json({
+            success: false,
+            message: "Invalid file type. Only .bin firmware files are accepted."
+        });
     }
 
     const firmwareName = `firmware_${deviceId}.bin`;
@@ -78,22 +92,35 @@ app.post("/upload/:deviceId", upload.single("firmware"), (req, res) => {
 
     fs.rename(req.file.path, targetPath, (err) => {
 
-        if (err) return res.status(500).send("File move failed");
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                message: "Server error: failed to save the firmware file. Please try again."
+            });
+        }
+
+        const firmwareUrl = `${SERVER_URL}/${firmwareName}`;
 
         deviceUpdates[deviceId] = {
-    update: true,
-    firmwareUrl: `${SERVER_URL}/${firmwareName}`
-};
+            update: true,
+            firmwareUrl: firmwareUrl
+        };
 
+        console.log(`✅ BIN firmware uploaded for ${deviceId} → ${firmwareUrl}`);
 
-
-        console.log(`Firmware uploaded for ${deviceId}`);
-        res.send(`Firmware uploaded for ${deviceId}`);
+        res.status(200).json({
+            success: true,
+            message: `BIN file uploaded successfully. Device "${deviceId}" is now queued for OTA firmware update.`,
+            device: deviceId,
+            firmware: firmwareName,
+            firmwareUrl: firmwareUrl,
+            timestamp: new Date().toISOString()
+        });
     });
 });
 
 // ===============================
-// 4️⃣ Update via GitHub Link    
+// Update via GitHub Link    
 // ===============================
 app.post("/update-link/:deviceId", async (req, res) => {
 
@@ -139,7 +166,7 @@ app.post("/update-link/:deviceId", async (req, res) => {
 
 
 // ===============================
-// 5️⃣ ESP32 Checks for Update
+// ESP32 Checks for Update
 // ===============================
 app.get("/trigger-update", (req, res) => {
 
@@ -169,7 +196,7 @@ app.get("/trigger-update", (req, res) => {
 });
 
 // ===============================
-// 6️⃣ Serve Firmware Files
+// Serve Firmware Files
 // ===============================
 app.get("/firmware_:deviceId.bin", (req, res) => {
 
@@ -193,7 +220,7 @@ app.post("/view-device", (req, res) => {
     if (deviceUpdates[deviceId]) {
         return res.json({
             device: deviceId,
-            data: deviceUpdates[deviceId]
+            message: `Device "${deviceId}" has a pending firmware update queued.`
         });
     }
 
@@ -202,10 +229,62 @@ app.post("/view-device", (req, res) => {
         message: "No update stored"
     });
 });
+// ===============================
+//  Receive Device Confirmation Message
+// ===============================
+app.post("/device-message", (req, res) => {
+
+    const { device, message } = req.body;
+
+    if (!device || !message) {
+        return res.status(400).json({
+            success: false,
+            message: "Both 'device' and 'message' fields are required."
+        });
+    }
+
+    deviceMessages[device] = {
+        message: message,
+        timestamp: new Date().toISOString()
+    };
+
+    console.log(`📩 Message received for ${device}: "${message}"`);
+
+    res.status(200).json({
+        success: true,
+        message: `Message stored for device "${device}".`,
+        device: device
+    });
+});
+
+// ===============================
+// Frontend Polls for Device Message
+// ===============================
+app.get("/device-message/:deviceId", (req, res) => {
+
+    const deviceId = req.params.deviceId;
+    const entry    = deviceMessages[deviceId];
+
+    if (!entry) {
+        return res.json({ received: false });
+    }
+
+    // Return and clear so the same message isn't returned twice
+    delete deviceMessages[deviceId];
+
+    res.json({
+        received:  true,
+        device:    deviceId,
+        message:   entry.message,
+        timestamp: entry.timestamp
+    });
+});
+
 app.get("/all-data", (req, res) => {
     res.json({
         deviceUpdates,
-        deviceOnlineStatus
+        deviceOnlineStatus,
+        deviceMessages
     });
 });
 
